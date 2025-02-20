@@ -5,12 +5,9 @@ fn main() {
     let ast = compiler
         .parse(
             r#"true then {
-                x := 0;
-                10 repeat {
-                    x := (x + 1);
-                    ((x % 2) = 0)
-                    then { x puts }
-                }
+                x := object;
+                x set 'value' 10;
+                (x get 'value') puts
             }"#
             .trim(),
         )
@@ -122,10 +119,12 @@ impl Compiler {
                     let value: String = value[1..value.len() - 1].to_string();
                     format!("(new ReagleString('{value}'))")
                 } else {
-                    if !self.vars.contains(value) {
+                    if !self.vars.contains(value)
+                        && !["object", "bool", "number", "string"].contains(&value.as_str())
+                    {
                         self.vars.push(value.clone());
                     }
-                    format!("global.{}", value)
+                    value.to_string()
                 }
             }
         }
