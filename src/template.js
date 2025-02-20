@@ -3,11 +3,11 @@ class ReagleObject {
         this.value = name;
     }
     set(prop, value) {
-        this[prop] = value;
+        this[prop.value] = value;
         return this;
     }
     get(prop) {
-        return this[prop];
+        return this[prop.value];
     }
     puts() {
         console.log(this.value);
@@ -78,3 +78,8 @@ class ReagleString extends ReagleObject {
         return new ReagleBool(this.value == other.value);
     }
 }
+
+let object = new ReagleObject(null);
+let number = new ReagleNumber(0);
+let string = new ReagleString("");
+let bool = new ReagleBool(false);
