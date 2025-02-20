@@ -44,7 +44,7 @@ class ReagleNumber extends ReagleObject {
     }
     repeat(block) {
         for (let i = 0; i < this.value; i++) {
-            block(new ReagleNumber(i));
+            block();
         }
     }
 }
@@ -62,9 +62,9 @@ class ReagleBool extends ReagleObject {
         this.value = !this.value;
         return this;
     }
-    if(cond, block, ...args) {
+    if(cond, block) {
         if (this.value === cond.value) {
-            block(args);
+            block();
         }
         return this;
     }
