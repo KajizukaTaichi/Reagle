@@ -4,12 +4,12 @@ fn main() {
     let mut compiler = Compiler { vars: vec![] };
     let ast = compiler
         .parse(
-            r#"true if true {
+            r#"true then {
                 x := 0;
                 10 repeat {
                     x := (x + 1);
                     ((x % 2) = 0)
-                    if true { x puts }
+                    then { x puts }
                 }
             }"#
             .trim(),
