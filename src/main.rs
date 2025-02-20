@@ -2,12 +2,9 @@ use std::collections::HashMap;
 
 fn main() {
     println!("Reagle");
-    println!(
-        "{}",
-        Expr::parse(r#"5 repeat { args[0] print }"#)
-            .map(|x| x.compile())
-            .unwrap()
-    );
+    let mut compiler = Compiler { vars: vec![] };
+    let ast = compiler.parse(r#"'Hello' puts"#.trim()).unwrap();
+    println!("{}", compiler.compile(&ast));
 }
 
 #[derive(Debug, Clone)]
@@ -21,8 +18,12 @@ enum Expr {
     },
 }
 
-impl Expr {
-    fn parse(source: &str) -> Option<Expr> {
+struct Compiler {
+    vars: Vec<String>,
+}
+
+impl Compiler {
+    fn parse(&self, source: &str) -> Option<Expr> {
         let tokens_list = tokenize(source.trim(), &[' ', '　', '\n', '\t', '\r'])?;
         if tokens_list.len() >= 2 {
             let operator_to_method = HashMap::from([
@@ -30,13 +31,15 @@ impl Expr {
                 ("-", "sub"),
                 ("*", "mul"),
                 ("/", "div"),
+                ("%", "mod"),
+                ("^", "pow"),
                 ("=", "eql"),
                 ("!", "not"),
                 ("&", "and"),
                 ("|", "or"),
             ]);
             Some(Expr::Send {
-                obj: Box::new(Expr::parse(&tokens_list[0])?),
+                obj: Box::new(self.parse(&tokens_list[0])?),
                 msg: {
                     let msg = tokens_list[1].trim().to_string();
                     operator_to_method
@@ -47,7 +50,7 @@ impl Expr {
                 args: {
                     let mut result = Vec::new();
                     for line in tokens_list[2..].iter() {
-                        result.push(Expr::parse(&line)?);
+                        result.push(self.parse(&line)?);
                     }
                     result
                 },
@@ -58,12 +61,12 @@ impl Expr {
                 let token: String = token[1..token.len() - 1].to_string();
                 let mut result = Vec::new();
                 for line in tokenize(&token, &[';'])? {
-                    result.push(Expr::parse(&line)?);
+                    result.push(self.parse(&line)?);
                 }
                 Some(Expr::Block(result))
             } else if token.starts_with("(") && token.ends_with(")") {
                 let token: String = token[1..token.len() - 1].to_string();
-                Some(Expr::parse(&token)?)
+                Some(self.parse(&token)?)
             } else {
                 Some(Expr::Value(token))
             }
@@ -72,13 +75,13 @@ impl Expr {
         }
     }
 
-    fn compile(&self) -> String {
-        match self {
+    fn compile(&mut self, expr: &Expr) -> String {
+        match expr {
             Expr::Send { obj, msg, args } => format!(
                 "({}.{msg}({}))",
-                obj.compile(),
+                self.compile(obj),
                 args.iter()
-                    .map(Expr::compile)
+                    .map(|obj| self.compile(obj))
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
@@ -86,7 +89,7 @@ impl Expr {
                 let mut result = String::new();
                 let mut index = 0;
                 while index < block.len() {
-                    let code = block[index].compile();
+                    let code = self.compile(&block[index]);
                     if index == (block.len() - 1) {
                         result.push_str(&format!("return {};", code))
                     } else {
@@ -102,9 +105,10 @@ impl Expr {
                 } else if let Ok(n) = value.parse::<bool>() {
                     format!("(new ReagleBool({n}))")
                 } else if value.starts_with("'") && value.ends_with("'") {
-                    let token: String = value[1..value.len() - 1].to_string();
-                    format!("(new ReagleString('{token}'))")
+                    let value: String = value[1..value.len() - 1].to_string();
+                    format!("(new ReagleString('{value}'))")
                 } else {
+                    self.vars.push(value.clone());
                     value.to_string()
                 }
             }
