@@ -9,7 +9,7 @@ class ReagleObject {
     get(prop) {
         return this[prop];
     }
-    println() {
+    puts() {
         console.log(this.value);
     }
 }
@@ -29,6 +29,14 @@ class ReagleNumber extends ReagleObject {
     }
     div(other) {
         this.value /= other.value;
+        return this;
+    }
+    mod(other) {
+        this.value %= other.value;
+        return this;
+    }
+    pow(other) {
+        this.value **= other.value;
         return this;
     }
     eql(other) {
@@ -54,14 +62,28 @@ class ReagleBool extends ReagleObject {
         this.value = !this.value;
         return this;
     }
-    if(cond, block) {
+    if(cond, block, ...args) {
         if (this.value === cond.value) {
-            block();
+            block(args);
         }
         return this;
     }
 }
 
-new ReagleNumber(5).repeat(function (...args) {
-    return args[0].println();
-});
+class ReagleString extends ReagleObject {
+    add(other) {
+        this.value += other.value;
+        return this;
+    }
+    mul(other) {
+        this.value = this.value.repeat(other.value);
+        return this;
+    }
+    eql(other) {
+        return new ReagleBool(this.value == other.value);
+    }
+}
+
+// -----
+
+new ReagleString("Hello").puts();
