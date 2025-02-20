@@ -2,7 +2,19 @@ use std::collections::HashMap;
 
 fn main() {
     let mut compiler = Compiler { vars: vec![] };
-    let ast = compiler.parse(r#"10 repeat { x println }"#.trim()).unwrap();
+    let ast = compiler
+        .parse(
+            r#"true if true {
+                x := 0;
+                10 repeat {
+                    x := (x + 1);
+                    ((x % 2) = 0)
+                    if true { x puts }
+                }
+            }"#
+            .trim(),
+        )
+        .unwrap();
     println!("{}", compiler.build(&ast));
 }
 
@@ -87,7 +99,7 @@ impl Compiler {
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
-            Expr::Block(block) => format!("function(x){{{}}}", {
+            Expr::Block(block) => format!("function(){{{}}}", {
                 let mut result = String::new();
                 let mut index = 0;
                 while index < block.len() {
@@ -110,8 +122,10 @@ impl Compiler {
                     let value: String = value[1..value.len() - 1].to_string();
                     format!("(new ReagleString('{value}'))")
                 } else {
-                    self.vars.push(value.clone());
-                    value.to_string()
+                    if !self.vars.contains(value) {
+                        self.vars.push(value.clone());
+                    }
+                    format!("global.{}", value)
                 }
             }
         }
@@ -121,12 +135,12 @@ impl Compiler {
         let js_code = include_str!("./template.js");
         let body = self.compile(expr);
         format!(
-            "{js_code}\n\n\n{};\n\n\n{}",
+            "{js_code}\n\n{}\n\n{}",
             self.vars
                 .iter()
-                .map(|i| format!("let {i}"))
+                .map(|i| format!("var {i};"))
                 .collect::<Vec<String>>()
-                .join(";\n"),
+                .join("\n"),
             body
         )
     }
