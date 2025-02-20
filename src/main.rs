@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
 fn main() {
-    println!("Reagle");
     let mut compiler = Compiler { vars: vec![] };
-    let ast = compiler.parse(r#"'Hello' puts"#.trim()).unwrap();
-    println!("{}", compiler.compile(&ast));
+    let ast = compiler.parse(r#"10 repeat { x println }"#.trim()).unwrap();
+    println!("{}", compiler.build(&ast));
 }
 
 #[derive(Debug, Clone)]
@@ -77,15 +76,18 @@ impl Compiler {
 
     fn compile(&mut self, expr: &Expr) -> String {
         match expr {
+            Expr::Send { obj, msg, args } if msg == ":=" => {
+                format!("{} = ({})", self.compile(obj), self.compile(&args[0]))
+            }
             Expr::Send { obj, msg, args } => format!(
                 "({}.{msg}({}))",
                 self.compile(obj),
                 args.iter()
-                    .map(|obj| self.compile(obj))
+                    .map(|i| self.compile(i))
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
-            Expr::Block(block) => format!("function(...args){{{}}}", {
+            Expr::Block(block) => format!("function(x){{{}}}", {
                 let mut result = String::new();
                 let mut index = 0;
                 while index < block.len() {
@@ -113,6 +115,20 @@ impl Compiler {
                 }
             }
         }
+    }
+
+    fn build(&mut self, expr: &Expr) -> String {
+        let js_code = include_str!("./template.js");
+        let body = self.compile(expr);
+        format!(
+            "{js_code}\n\n\n{};\n\n\n{}",
+            self.vars
+                .iter()
+                .map(|i| format!("let {i}"))
+                .collect::<Vec<String>>()
+                .join(";\n"),
+            body
+        )
     }
 }
 
