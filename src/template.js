@@ -16,28 +16,22 @@ class ReagleObject {
 
 class ReagleNumber extends ReagleObject {
     add(other) {
-        this.value += other.value;
-        return this;
+        return ReagleNumber(this.value + other.value);
     }
     sub(other) {
-        this.value -= other.value;
-        return this;
+        return ReagleNumber(this.value - other.value);
     }
     mul(other) {
-        this.value *= other.value;
-        return this;
+        return ReagleNumber(this.value * other.value);
     }
     div(other) {
-        this.value /= other.value;
-        return this;
+        return ReagleNumber(this.value / other.value);
     }
     mod(other) {
-        this.value %= other.value;
-        return this;
+        return ReagleNumber(this.value % other.value);
     }
     pow(other) {
-        this.value **= other.value;
-        return this;
+        return ReagleNumber(this.value ** other.value);
     }
     eql(other) {
         return new ReagleBool(this.value == other.value);
@@ -51,19 +45,22 @@ class ReagleNumber extends ReagleObject {
 
 class ReagleBool extends ReagleObject {
     and(other) {
-        this.value &&= other.value;
-        return this;
+        return ReagleNumber(this.value && other.value);
     }
     or(other) {
-        this.value ||= other.value;
-        return this;
+        return ReagleNumber(this.value || other.value);
     }
     not() {
-        this.value = !this.value;
+        return ReagleNumber(!this.value);
+    }
+    then(block) {
+        if (this.value) {
+            block();
+        }
         return this;
     }
-    if(cond, block) {
-        if (this.value === cond.value) {
+    else(block) {
+        if (this.value) {
             block();
         }
         return this;
